@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $insert->execute();
             $insert->close();
 
-            header("Location: /pulsekit/dashboard/main.php");
+            header("Location: /pulsekit/dashboard/pipeline.php");
             exit();
         }
         else {

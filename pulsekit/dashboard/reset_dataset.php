@@ -26,6 +26,7 @@ $stmt->close();
 if ($success) {
     $_SESSION['dataset_loaded']    = 0;
     $_SESSION['pipeline_executed'] = 0;
+    $_SESSION['pipeline_ran']      = false;
     echo json_encode(['success' => true]);
 } else {
     http_response_code(500);

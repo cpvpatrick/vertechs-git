@@ -680,7 +680,7 @@ $max_growth = count($display_data) > 0 ? max(array_column($display_data, 'growth
    MODULE LOCK SYSTEM (server-side, per-user)
    Unlock state comes from PHP/DB — not localStorage
 ========================= */
-const UNLOCKED = <?php echo $user_dataset_loaded ? 'true' : 'false'; ?>;
+const UNLOCKED = <?php echo $user_pipeline_executed ? 'true' : 'false'; ?>;
 
 function applyLockState() {
     document.querySelectorAll('.menu a[data-locked]').forEach(link => {

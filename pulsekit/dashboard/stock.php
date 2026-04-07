@@ -965,7 +965,7 @@ if ($filter_action !== 'All') {
    MODULE LOCK SYSTEM (server-side, per-user)
    Unlock state comes from PHP/DB — not localStorage
 ========================= */
-const UNLOCKED = <?php echo $user_dataset_loaded ? 'true' : 'false'; ?>;
+const UNLOCKED = <?php echo $user_pipeline_executed ? 'true' : 'false'; ?>;
 
 function applyLockState() {
     document.querySelectorAll('.menu a[data-locked]').forEach(link => {
