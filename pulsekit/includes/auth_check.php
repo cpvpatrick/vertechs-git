@@ -29,4 +29,8 @@ if ($_SESSION["ip_address"] !== $_SERVER["REMOTE_ADDR"] ||
     header("Location: ../index.php");
     exit();
 }
+
+/* ACCESS GUARD */
+require_once __DIR__ . "/access_guard.php";
+
 ?>

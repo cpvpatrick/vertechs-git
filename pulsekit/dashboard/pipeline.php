@@ -3,7 +3,8 @@ require_once "../includes/auth_check.php";
 
 /* FETCH PER-USER UNLOCK STATUS FROM DATABASE */
 require_once "../includes/get_unlock_status.php";
-// $user_dataset_loaded is now a PHP bool
+// $user_dataset_loaded    = dataset loaded (shows post-load UI)
+// $user_pipeline_executed = pipeline run (unlocks modules)
 
 
 /* TRACK PAGE ACTIVITY */
@@ -819,6 +820,191 @@ $stmt->close();
 
         body.dark-mode .pipeline-sample-note { color: #6b7a90 !important; }
 
+        /* =========================
+           POST-LOAD PIPELINE SECTIONS
+        ========================= */
+        .pipe-section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 24px 28px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border: 1px solid #e8e8e8;
+        }
+        .pipe-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .pipe-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 0;
+        }
+        .ingestion-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .ingestion-meta-item {
+            padding: 14px 18px;
+            border-right: 1px solid #e8e8e8;
+        }
+        .ingestion-meta-item:last-child { border-right: none; }
+        .ingestion-meta-label {
+            font-size: 11px;
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 5px;
+        }
+        .ingestion-meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .ingestion-pass { color: #28a745 !important; }
+        .show-preview-link {
+            font-size: 13px;
+            color: #1c4aa0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .show-preview-link:hover { text-decoration: underline; }
+        .pipe-pass-badge {
+            background: #e8f9ee;
+            color: #1a7a3c;
+            border: 1px solid #b2e8c6;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+        }
+        .quality-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        .quality-metric {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .qm-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .qm-label { font-size: 12px; color: #888; }
+        .run-pipeline-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #1c4aa0;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 9px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .run-pipeline-btn:hover:not(:disabled) { background: #163b7a; }
+        .run-pipeline-btn:disabled { background: #8a9abc; cursor: default; }
+        .run-pipeline-btn.complete {
+            background: #e8f0fe;
+            color: #1c4aa0;
+            border: 1px solid #b8cef0;
+        }
+        .pipeline-stage-list { display: flex; flex-direction: column; }
+        .pipeline-stage {
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .pipeline-stage.stage-running  { border-color: #1c4aa0; }
+        .pipeline-stage.stage-complete { border-color: #28a745; }
+        .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #fff;
+        }
+        .stage-dot {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: #fff;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .stage-dot.running {
+            border-color: #1c4aa0;
+            background: #1c4aa0;
+            animation: pulseDot 1s ease-in-out infinite;
+        }
+        .stage-dot.complete {
+            border-color: #28a745;
+            background: #28a745;
+            color: #fff;
+        }
+        .stage-dot.complete::after { content: "✓"; font-size: 11px; font-weight: 700; }
+        @keyframes pulseDot {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(28,74,160,0.4); }
+            50%       { box-shadow: 0 0 0 5px rgba(28,74,160,0); }
+        }
+        .stage-name { font-size: 14px; font-weight: 600; color: #1a1a2e; flex: 1; }
+        .stage-duration { font-size: 12px; color: #888; font-family: monospace; }
+        .stage-body {
+            padding: 0 18px 14px 50px;
+            background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+        }
+        .stage-rowcount { font-size: 12px; color: #666; margin-bottom: 8px; margin-top: 10px; }
+        .stage-log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px; color: #444;
+            background: transparent; border: none; margin: 0; padding: 0;
+            white-space: pre-wrap; line-height: 1.6;
+        }
+        /* Dark mode — pipeline sections */
+        body.dark-mode .pipe-section { background: #1a1d27 !important; border-color: #2a2f3e !important; }
+        body.dark-mode .pipe-section-title { color: #e8eaf0 !important; }
+        body.dark-mode .ingestion-summary-grid { border-color: #2a2f3e !important; }
+        body.dark-mode .ingestion-meta-item { border-right-color: #2a2f3e !important; }
+        body.dark-mode .ingestion-meta-label { color: #6b7a90 !important; }
+        body.dark-mode .ingestion-meta-value { color: #e8eaf0 !important; }
+        body.dark-mode .pipe-pass-badge { background: rgba(40,167,69,0.12) !important; color: #3ddc6e !important; border-color: rgba(40,167,69,0.25) !important; }
+        body.dark-mode .quality-metric { background: #0f1117 !important; }
+        body.dark-mode .qm-value { color: #e8eaf0 !important; }
+        body.dark-mode .qm-label { color: #6b7a90 !important; }
+        body.dark-mode .pipeline-stage { border-color: #2a2f3e !important; }
+        body.dark-mode .pipeline-stage.stage-running  { border-color: #1c4aa0 !important; }
+        body.dark-mode .pipeline-stage.stage-complete { border-color: #28a745 !important; }
+        body.dark-mode .stage-header { background: #1a1d27 !important; }
+        body.dark-mode .stage-name   { color: #e8eaf0 !important; }
+        body.dark-mode .stage-duration { color: #6b7a90 !important; }
+        body.dark-mode .stage-body { background: #0f1117 !important; border-top-color: #2a2f3e !important; }
+        body.dark-mode .stage-rowcount { color: #8892a4 !important; }
+        body.dark-mode .stage-log { color: #b0b8cc !important; }
+        body.dark-mode .show-preview-link { color: #5b8fe8 !important; }
+        body.dark-mode .run-pipeline-btn.complete { background: rgba(28,74,160,0.2) !important; color: #7eb3ff !important; border-color: #1c4aa0 !important; }
+
     </style>
 </head>
 <body>
@@ -908,7 +1094,7 @@ $stmt->close();
             </nav>
 
             <!-- ANALYTICS LOCKED BANNER (shown when locked) -->
-            <?php if (!$user_dataset_loaded): ?>
+            <?php if (!$user_pipeline_executed): ?>
             <div class="analytics-locked-banner">
                 <div class="alb-header">⚠ Analytics Locked</div>
                 <div class="alb-body">Run the pipeline first to unlock all analytics visualizations and pages.</div>
@@ -1007,136 +1193,153 @@ $stmt->close();
                     <?php if ($user_dataset_loaded): ?>
                     <p class="pipeline-sample-note">Sample data is already loaded in the database</p>
                     <?php endif; ?>
+                    <?php if ($user_pipeline_executed): ?>
+                    <p class="pipeline-sample-note" style="color:#28a745;font-weight:600;">✓ Pipeline complete — all modules unlocked</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <!-- DATA QUALITY CHECKS -->
-        <div class="chart-container">
-            <h3 class="chart-title">📊 Data Quality Checks</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Check</th>
-                        <th>Status</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Data Completeness</strong></td>
-                        <td><span class="coherence-status pass">✓ PASS</span></td>
-                        <td>100% of records have required fields</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Date Range Coverage</strong></td>
-                        <td><span class="coherence-status pass">✓ PASS</span></td>
-                        <td>2023-01-01 to 2025-08-01 (32 months)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Outlier Detection</strong></td>
-                        <td><span class="coherence-status pass">✓ PASS</span></td>
-                        <td>0 extreme outliers detected (IQR method)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Missing Values</strong></td>
-                        <td><span class="coherence-status pass">✓ PASS</span></td>
-                        <td>No missing values in key columns</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Duplicate Records</strong></td>
-                        <td><span class="coherence-status pass">✓ PASS</span></td>
-                        <td>0 duplicate records found</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- DATA INGESTION SUMMARY — shown after dataset loaded -->
+        <div class="pipe-section" id="sectionIngestionSummary" style="display:none;">
+            <h3 class="pipe-section-title">Data Ingestion Summary</h3>
+            <div class="ingestion-summary-grid">
+                <div class="ingestion-meta-item">
+                    <div class="ingestion-meta-label">File Name</div>
+                    <div class="ingestion-meta-value">sample_nestle_southstar_data.csv</div>
+                </div>
+                <div class="ingestion-meta-item">
+                    <div class="ingestion-meta-label">Total Rows</div>
+                    <div class="ingestion-meta-value">73,080</div>
+                </div>
+                <div class="ingestion-meta-item">
+                    <div class="ingestion-meta-label">Date Range</div>
+                    <div class="ingestion-meta-value">2024-01-01 to 2025-08-31</div>
+                </div>
+                <div class="ingestion-meta-item">
+                    <div class="ingestion-meta-label">Schema Validation</div>
+                    <div class="ingestion-meta-value ingestion-pass">✓ PASS</div>
+                </div>
+            </div>
+            <a href="#" class="show-preview-link" onclick="return false;">Show Data Preview</a>
         </div>
 
-        <!-- FEATURE ENGINEERING -->
-        <div class="chart-container">
-            <h3 class="chart-title">⚙️ Feature Engineering Pipeline</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Trend Component (MSTL)</strong></td>
-                        <td>Time Series Decomposition</td>
-                        <td><span class="coherence-status pass">✓ READY</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Seasonal Indices (MSTL)</strong></td>
-                        <td>Seasonality Extraction</td>
-                        <td><span class="coherence-status pass">✓ READY</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Lag Features (1-12 months)</strong></td>
-                        <td>Autoregressive</td>
-                        <td><span class="coherence-status pass">✓ READY</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Rolling Averages</strong></td>
-                        <td>Smoothing</td>
-                        <td><span class="coherence-status pass">✓ READY</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Calendar Features (DoW, Month, Quarter)</strong></td>
-                        <td>Temporal</td>
-                        <td><span class="coherence-status pass">✓ READY</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- DATA QUALITY SUMMARY — shown after dataset loaded -->
+        <div class="pipe-section" id="sectionQualitySummary" style="display:none;">
+            <div class="pipe-section-header">
+                <h3 class="pipe-section-title">Data Quality Summary</h3>
+                <span class="pipe-pass-badge">PASS</span>
+            </div>
+            <div class="quality-metrics-grid">
+                <div class="quality-metric"><div class="qm-value">0</div><div class="qm-label">Missing Values</div></div>
+                <div class="quality-metric"><div class="qm-value">0</div><div class="qm-label">Duplicates</div></div>
+                <div class="quality-metric"><div class="qm-value">0</div><div class="qm-label">Invalid Qty</div></div>
+                <div class="quality-metric"><div class="qm-value">0</div><div class="qm-label">Date Gaps</div></div>
+                <div class="quality-metric"><div class="qm-value">0</div><div class="qm-label">Outliers</div></div>
+            </div>
         </div>
 
-        <!-- PIPELINE EXECUTION -->
-        <div class="chart-container">
-            <h3 class="chart-title">🚀 Pipeline Execution Status</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Stage</th>
-                        <th>Progress</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>1. Data Ingestion</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>2. Data Preparation</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>3. MSTL Seasonality</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>4. LightGBM Forecasting</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>5. MinT Coherence</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>6. C2G Analysis</strong></td>
-                        <td><div style="background: #e0e0e0; height: 8px; border-radius: 4px;"><div style="background: #28a745; height: 100%; width: 100%; border-radius: 4px;"></div></div></td>
-                        <td><span class="coherence-status pass">✓ COMPLETE</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- PIPELINE EXECUTION — shown after dataset loaded -->
+        <div class="pipe-section" id="sectionPipelineExec" style="display:none;">
+            <div class="pipe-section-header">
+                <h3 class="pipe-section-title">Pipeline Execution</h3>
+                <button class="run-pipeline-btn" id="runPipelineBtn" onclick="runPipeline()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Run Pipeline
+                </button>
+            </div>
+
+            <!-- Stage rows — pending state by default -->
+            <div class="pipeline-stage-list" id="pipelineStageList">
+                <div class="pipeline-stage" id="stage-ingestion" data-stage="0">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-ingestion"></span>
+                        <span class="stage-name">Ingestion</span>
+                        <span class="stage-duration" id="dur-ingestion"></span>
+                    </div>
+                    <div class="stage-body" id="body-ingestion" style="display:none;">
+                        <div class="stage-rowcount">Rows: 0 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-ingestion"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-cleaning" data-stage="1">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-cleaning"></span>
+                        <span class="stage-name">Cleaning</span>
+                        <span class="stage-duration" id="dur-cleaning"></span>
+                    </div>
+                    <div class="stage-body" id="body-cleaning" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 72,861 out</div>
+                        <pre class="stage-log" id="log-cleaning"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-features" data-stage="2">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-features"></span>
+                        <span class="stage-name">Feature Engineering</span>
+                        <span class="stage-duration" id="dur-features"></span>
+                    </div>
+                    <div class="stage-body" id="body-features" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-features"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-mstl" data-stage="3">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-mstl"></span>
+                        <span class="stage-name">MSTL Decomposition</span>
+                        <span class="stage-duration" id="dur-mstl"></span>
+                    </div>
+                    <div class="stage-body" id="body-mstl" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-mstl"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-lightgbm" data-stage="4">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-lightgbm"></span>
+                        <span class="stage-name">LightGBM Forecast</span>
+                        <span class="stage-duration" id="dur-lightgbm"></span>
+                    </div>
+                    <div class="stage-body" id="body-lightgbm" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-lightgbm"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-mint" data-stage="5">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-mint"></span>
+                        <span class="stage-name">MinT Reconciliation</span>
+                        <span class="stage-duration" id="dur-mint"></span>
+                    </div>
+                    <div class="stage-body" id="body-mint" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-mint"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-c2g" data-stage="6">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-c2g"></span>
+                        <span class="stage-name">C2G Attribution</span>
+                        <span class="stage-duration" id="dur-c2g"></span>
+                    </div>
+                    <div class="stage-body" id="body-c2g" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 73,080 out</div>
+                        <pre class="stage-log" id="log-c2g"></pre>
+                    </div>
+                </div>
+                <div class="pipeline-stage" id="stage-prescriptions" data-stage="7">
+                    <div class="stage-header">
+                        <span class="stage-dot" id="dot-prescriptions"></span>
+                        <span class="stage-name">Prescriptions</span>
+                        <span class="stage-duration" id="dur-prescriptions"></span>
+                    </div>
+                    <div class="stage-body" id="body-prescriptions" style="display:none;">
+                        <div class="stage-rowcount">Rows: 73,080 in → 60 out</div>
+                        <pre class="stage-log" id="log-prescriptions"></pre>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </main>
@@ -1163,7 +1366,8 @@ $stmt->close();
    MODULE LOCK SYSTEM (server-side, per-user)
    Unlock state comes from PHP/DB — not localStorage
 ========================= */
-const UNLOCKED = <?php echo $user_dataset_loaded ? 'true' : 'false'; ?>;
+const UNLOCKED = <?php echo $user_pipeline_executed ? 'true' : 'false'; ?>;
+const DATASET_LOADED = <?php echo $user_dataset_loaded ? 'true' : 'false'; ?>;
 
 function applyLockState() {
     document.querySelectorAll('.sidebar-link[data-locked]').forEach(link => {
@@ -1306,11 +1510,8 @@ function closeLogoutModal() {
 }
 
 function loadSampleData() {
-    const btn = document.querySelector('.load-sample-btn');
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ Loading...';
-    }
+    const btn = document.getElementById('loadSampleBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading...'; }
 
     fetch('/pulsekit/dashboard/load_dataset.php', {
         method: 'POST',
@@ -1320,51 +1521,253 @@ function loadSampleData() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // Show toast
-            const toast = document.getElementById('unlockToast');
-            if (toast) {
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3500);
-            }
-            // Update button
             if (btn) {
-                btn.textContent = '✓ Dataset Loaded — Modules Unlocked';
+                btn.textContent = '✓ Dataset Loaded — Run Pipeline to Unlock';
                 btn.style.background = '#28a745';
             }
-            // Unlock nav links immediately (no page reload needed)
-            document.querySelectorAll('.sidebar-link[data-locked]').forEach(link => {
-                link.classList.remove('locked');
-                link.removeAttribute('tabindex');
-            });
+            // Show post-load sections (pipeline still needs to run to unlock)
+            showPostLoadUI();
         } else {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = '✓ Load Sample Dataset';
-            }
+            if (btn) { btn.disabled = false; btn.textContent = 'Load Sample Dataset'; }
             alert('Error: ' + (data.message || 'Could not load dataset.'));
         }
     })
     .catch(err => {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = '✓ Load Sample Dataset';
-        }
+        if (btn) { btn.disabled = false; btn.textContent = 'Load Sample Dataset'; }
         alert('Network error — please try again.');
         console.error(err);
     });
 }
 
-    // Reflect server-side unlock state on the load button
-    <?php if ($user_dataset_loaded): ?>
+function showPostLoadUI() {
+    document.querySelector('.pipeline-welcome-card').style.display = 'none';
+    document.getElementById('sectionIngestionSummary').style.display = 'block';
+    document.getElementById('sectionQualitySummary').style.display  = 'block';
+    document.getElementById('sectionPipelineExec').style.display    = 'block';
+}
+
+/* =========================
+   PIPELINE SIMULATION
+========================= */
+const PIPELINE_STAGES = [
+    {
+        id: 'ingestion',
+        duration: '1348ms',
+        logs: [
+            'Starting Ingestion...',
+            '✓ Loaded 73080 rows',
+            '✓ Date range: 2024-01-01 to 2025-08-31',
+            '✓ Schema validation passed'
+        ]
+    },
+    {
+        id: 'cleaning',
+        duration: '1032ms',
+        logs: [
+            'Starting Cleaning...',
+            '✓ Checked 73080 rows',
+            '✓ Removed 146 duplicates',
+            '✓ Removed 73 invalid quantities',
+            '✓ No missing values detected',
+            '✓ No date gaps found'
+        ]
+    },
+    {
+        id: 'features',
+        duration: '968ms',
+        logs: [
+            'Starting Feature Engineering...',
+            '✓ Created lag features (7d, 30d)',
+            '✓ Created rolling averages (7d, 30d)',
+            '✓ Added calendar features (BER_flag)',
+            '✓ Categorical encoding prepared'
+        ]
+    },
+    {
+        id: 'mstl',
+        duration: '830ms',
+        logs: [
+            'Starting MSTL Decomposition...',
+            '✓ MSTL decomposition completed',
+            '✓ Extracted trend component',
+            '✓ Extracted seasonal indices (monthly)',
+            '✓ Computed seasonality profiles by Category/Region'
+        ]
+    },
+    {
+        id: 'lightgbm',
+        duration: '945ms',
+        logs: [
+            'Starting LightGBM Forecast...',
+            '✓ Trained LightGBM global model',
+            '✓ Feature importance: lag_30 (0.32), rolling_mean_30 (0.28)',
+            '✓ Generated base forecasts (6-month horizon)',
+            '✓ Validation MAPE: 8.4%'
+        ]
+    },
+    {
+        id: 'mint',
+        duration: '1307ms',
+        logs: [
+            'Starting MinT Reconciliation...',
+            '✓ Built aggregation hierarchy (SKU→Brand→Category)',
+            '✓ Built geographic hierarchy (Store→Cluster→Region→National)',
+            '✓ MinT reconciliation completed',
+            '✓ Coherence check: PASS (bottom sums = reconciled totals)'
+        ]
+    },
+    {
+        id: 'c2g',
+        duration: '1410ms',
+        logs: [
+            'Starting C2G Attribution...',
+            '✓ Calculated additive contributions to trend growth',
+            '✓ Attributed by Region, Cluster, Product',
+            '✓ Contributions sum to 100%',
+            '✓ Top driver: GMA (+28.3% of growth)'
+        ]
+    },
+    {
+        id: 'prescriptions',
+        duration: '2014ms',
+        logs: [
+            'Starting Prescriptions...',
+            '✓ Generated stock allocation rules',
+            '✓ Actions: 18 Expand, 35 Maintain, 7 De-prioritize',
+            '✓ Prioritized by Trend + Forecast + C2G',
+            '✓ Recommendations ready for export'
+        ]
+    }
+];
+
+function runPipeline() {
+    const btn = document.getElementById('runPipelineBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Running...';
+
+    // Reset all stages
+    PIPELINE_STAGES.forEach(stage => {
+        const dot  = document.getElementById('dot-' + stage.id);
+        const body = document.getElementById('body-' + stage.id);
+        const dur  = document.getElementById('dur-' + stage.id);
+        const log  = document.getElementById('log-' + stage.id);
+        const el   = document.getElementById('stage-' + stage.id);
+        if (dot)  { dot.className = 'stage-dot'; dot.textContent = ''; }
+        if (body) body.style.display = 'none';
+        if (dur)  dur.textContent = '';
+        if (log)  log.textContent = '';
+        if (el)   { el.classList.remove('stage-running', 'stage-complete'); }
+    });
+
+    let delay = 0;
+    PIPELINE_STAGES.forEach((stage, i) => {
+        // Parse ms from duration string for the actual delay
+        const ms = parseInt(stage.duration);
+
+        setTimeout(() => {
+            // Mark as running
+            const el  = document.getElementById('stage-' + stage.id);
+            const dot = document.getElementById('dot-' + stage.id);
+            if (el)  el.classList.add('stage-running');
+            if (dot) dot.className = 'stage-dot running';
+
+            // After the stage "runs", mark complete and type logs
+            setTimeout(() => {
+                if (el)  { el.classList.remove('stage-running'); el.classList.add('stage-complete'); }
+                if (dot) { dot.className = 'stage-dot complete'; }
+
+                const dur  = document.getElementById('dur-' + stage.id);
+                const body = document.getElementById('body-' + stage.id);
+                const log  = document.getElementById('log-' + stage.id);
+                if (dur)  dur.textContent = stage.duration;
+                if (body) body.style.display = 'block';
+
+                // Type-in log lines with small stagger
+                if (log) {
+                    log.textContent = '';
+                    stage.logs.forEach((line, li) => {
+                        setTimeout(() => {
+                            log.textContent += (li > 0 ? '\n' : '') + line;
+                        }, li * 80);
+                    });
+                }
+
+                // If last stage, mark pipeline complete
+                if (i === PIPELINE_STAGES.length - 1) {
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.className = 'run-pipeline-btn complete';
+                        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Pipeline Complete';
+
+                        // Persist to DB + unlock nav immediately
+                        fetch('/pulsekit/dashboard/run_pipeline.php', {
+                            method: 'POST',
+                            credentials: 'same-origin'
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Unlock all analytics nav links
+                                document.querySelectorAll('.sidebar-link[data-locked]').forEach(link => {
+                                    link.classList.remove('locked');
+                                    link.removeAttribute('tabindex');
+                                });
+                                // Remove locked banner
+                                const banner = document.querySelector('.analytics-locked-banner');
+                                if (banner) banner.remove();
+                            }
+                        })
+                        .catch(err => console.error('Pipeline persist error:', err));
+
+                    }, stage.logs.length * 80 + 200);
+                }
+            }, ms);
+
+        }, delay);
+
+        delay += ms + 300; // stage duration + 300ms buffer between stages
+    });
+}
+
+    // On page load: restore state from DB flags
     (function() {
-        const btn = document.querySelector('.load-sample-btn');
-        if (btn) {
-            btn.textContent = '✓ Dataset Loaded — Modules Unlocked';
-            btn.style.background = '#28a745';
-            btn.disabled = true;
+        // If dataset loaded (with or without pipeline run), show post-load UI
+        if (DATASET_LOADED || UNLOCKED) {
+            showPostLoadUI();
+            const btn = document.getElementById('loadSampleBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.style.background = '#28a745';
+                btn.textContent = UNLOCKED
+                    ? '✓ Dataset Loaded — Pipeline Complete'
+                    : '✓ Dataset Loaded — Run Pipeline to Unlock';
+            }
+        }
+
+        // If pipeline was already run, restore all stage rows as complete
+        if (UNLOCKED) {
+            PIPELINE_STAGES.forEach(stage => {
+                const el   = document.getElementById('stage-' + stage.id);
+                const dot  = document.getElementById('dot-' + stage.id);
+                const body = document.getElementById('body-' + stage.id);
+                const dur  = document.getElementById('dur-' + stage.id);
+                const log  = document.getElementById('log-' + stage.id);
+                if (el)   { el.classList.remove('stage-running'); el.classList.add('stage-complete'); }
+                if (dot)  { dot.className = 'stage-dot complete'; }
+                if (body) body.style.display = 'block';
+                if (dur)  dur.textContent = stage.duration;
+                if (log)  log.textContent = stage.logs.join('
+');
+            });
+            // Mark button as complete
+            const btn = document.getElementById('runPipelineBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.className = 'run-pipeline-btn complete';
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Pipeline Complete';
+            }
         }
     })();
-    <?php endif; ?>
 
 </script>
 

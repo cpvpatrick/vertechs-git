@@ -26,7 +26,7 @@ $stmt->close();
 
 if ($success) {
     // Also update the session so the current page-load knows immediately
-    $_SESSION['dataset_loaded'] = 1;
+    $_SESSION['dataset_loaded'] = true;
 
     // Log the activity
     $page_name = "Dataset Loaded";
