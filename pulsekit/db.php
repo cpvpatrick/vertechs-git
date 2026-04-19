@@ -1,10 +1,11 @@
 <?php
-$host = "localhost";
-$user = "root";        // change if needed
-$pass = "";            // change if needed
-$dbname = "pulsekit";
+$host = "mysql.railway.internal";
+$user = "root";
+$pass = "WQbLBzDhdKECgWNxaZLyHjzpVRICZUia";
+$dbname = "railway";
+$port = 3306;
 
-$conn = new mysqli("localhost", "root", "", "pulsekit");
+$conn = new mysqli($host, $user, $pass, $dbname, $port);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
