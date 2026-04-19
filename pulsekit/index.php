@@ -66,7 +66,7 @@ if ($stmt2 === false) {
             $stmt2->execute();
             $stmt2->close();
 
-            header("Location: vertechs-git/pulsekit/dashboard/pipeline.php");
+            header("Location: /vertechs-git/pulsekit/dashboard/pipeline.php");
             exit();
         }
 
