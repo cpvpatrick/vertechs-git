@@ -2,7 +2,7 @@
 $host = "roundhouse.proxy.rlwy.net";
 $user = "root";
 $pass = "WQbLBzDhdKECgWNxaZLyHjzpVRICZUia";
-$dbname = "railway";
+$dbname = "pulsekit";
 $port = 50252;
 
 $conn = new mysqli($host, $user, $pass, $dbname, $port);
