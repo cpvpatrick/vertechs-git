@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "db.php";
+require_once __DIR__ . "/../db.php";
 
 /* =========================
    CSRF TOKEN VALIDATION
@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $insert->execute();
             $insert->close();
 
-            header("Location: /pulsekit/dashboard/main.php");
+            header("Location: /pulsekit/dashboard/pipeline.php");
             exit();
         }
         else {

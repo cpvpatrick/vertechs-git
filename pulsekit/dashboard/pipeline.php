@@ -251,20 +251,12 @@ $stmt->close();
         /* =========================
            MODULE LOCK STYLES
         ========================= */
-        .menu a.locked {
-            opacity: 0.45;
-            cursor: not-allowed;
-            pointer-events: none;
-            position: relative;
+        .sidebar-link.locked {
+            opacity: 0.45 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
         }
-        .menu a.locked::after {
-            content: "🔒";
-            font-size: 11px;
-            margin-left: 6px;
-            vertical-align: middle;
-            opacity: 0.8;
-        }
-        .menu a.locked::before {
+        .sidebar-link:not(.locked) .sidebar-lock-icon {
             display: none !important;
         }
 
@@ -1368,6 +1360,8 @@ $stmt->close();
 ========================= */
 const UNLOCKED = <?php echo $user_pipeline_executed ? 'true' : 'false'; ?>;
 const DATASET_LOADED = <?php echo $user_dataset_loaded ? 'true' : 'false'; ?>;
+window.UNLOCKED = UNLOCKED;
+window.DATASET_LOADED = DATASET_LOADED;
 
 function applyLockState() {
     document.querySelectorAll('.sidebar-link[data-locked]').forEach(link => {
@@ -1383,7 +1377,7 @@ function applyLockState() {
 
 function confirmResetDataset() {
     if (confirm('Reset your dataset? This will re-lock all analytics modules until you load the sample data again.')) {
-        fetch('/pulsekit/dashboard/reset_dataset.php', {
+        fetch('reset_dataset.php', {
             method: 'POST',
             credentials: 'same-origin'
         })
@@ -1513,7 +1507,7 @@ function loadSampleData() {
     const btn = document.getElementById('loadSampleBtn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading...'; }
 
-    fetch('/pulsekit/dashboard/load_dataset.php', {
+    fetch('load_dataset.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin'
@@ -1700,7 +1694,7 @@ function runPipeline() {
                         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Pipeline Complete';
 
                         // Persist to DB + unlock nav immediately
-                        fetch('/pulsekit/dashboard/run_pipeline.php', {
+                        fetch('run_pipeline.php', {
                             method: 'POST',
                             credentials: 'same-origin'
                         })
@@ -1756,8 +1750,7 @@ function runPipeline() {
                 if (dot)  { dot.className = 'stage-dot complete'; }
                 if (body) body.style.display = 'block';
                 if (dur)  dur.textContent = stage.duration;
-                if (log)  log.textContent = stage.logs.join('
-');
+                if (log)  log.textContent = stage.logs.join('\n');
             });
             // Mark button as complete
             const btn = document.getElementById('runPipelineBtn');

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "../db.php";
+require_once __DIR__ . "/../db.php";
 
 if (isset($_SESSION["session_id"])) {
 

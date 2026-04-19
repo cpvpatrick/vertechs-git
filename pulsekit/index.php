@@ -9,11 +9,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = trim($_POST["username"]);
     $password = $_POST["password"];
 
-    $stmt = $conn->prepare(
-        "SELECT id, password, email_verified 
-         FROM users 
-         WHERE username = ?"
-    );
+	    $stmt = $conn->prepare(
+	        "SELECT id, password, email_verified, dataset_loaded, pipeline_executed 
+	         FROM users 
+	         WHERE username = ?"
+	    );
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -42,6 +42,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION["user_agent"] = $_SERVER["HTTP_USER_AGENT"];
             $_SESSION["last_activity"] = time();
 
+	            // ✅ Initialize pipeline flags from database
+	            $_SESSION["dataset_loaded"] = $user["dataset_loaded"];
+	            $_SESSION["pipeline_executed"] = $user["pipeline_executed"];
+
             // ✅ Insert login history
             $stmt2 = $conn->prepare(
                 "INSERT INTO login_history 
@@ -62,7 +66,7 @@ if ($stmt2 === false) {
             $stmt2->execute();
             $stmt2->close();
 
-            header("Location: dashboard/pipeline.php");
+            header("Location: /pulsekit/dashboard/pipeline.php");
             exit();
         }
 

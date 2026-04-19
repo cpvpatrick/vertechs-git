@@ -45,8 +45,7 @@ if (isset($_SESSION['dataset_loaded']) && array_key_exists('pipeline_executed', 
         // pipeline_executed stays false until migration is run
     }
 
-    $_SESSION['dataset_loaded']    = $user_dataset_loaded    ? true : false;
-    $_SESSION['pipeline_executed'] = $user_pipeline_executed ? true : false;
-    $_SESSION['pipeline_ran']      = $_SESSION['pipeline_executed'];
+    $_SESSION['dataset_loaded']    = $user_dataset_loaded    ? 1 : 0;
+    $_SESSION['pipeline_executed'] = $user_pipeline_executed ? 1 : 0;
 }
 ?>

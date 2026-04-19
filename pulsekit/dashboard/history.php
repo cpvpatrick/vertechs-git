@@ -274,6 +274,7 @@ $activity_stmt->close();
         .sidebar-lock-icon   { font-size: 11px; opacity: 0.5; flex-shrink: 0; }
         .sidebar-link.locked { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
         .sidebar-link.locked .sidebar-lock-icon { opacity: 1; }
+        .sidebar-link:not(.locked) .sidebar-lock-icon { display: none; }
 
         .analytics-locked-banner { margin: 12px 10px; background: #fffbeb; border: 1px solid #f5d76e; border-radius: 8px; padding: 12px 14px; }
         .alb-header { font-size: 12px; font-weight: 700; color: #92650a; margin-bottom: 6px; }
@@ -302,7 +303,7 @@ $activity_stmt->close();
             display: flex; align-items: flex-start; justify-content: space-between;
             margin-bottom: 20px;
         }
-        .history-page-title { font-size: 28px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+        .history-page-title { font-size: 30px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
         .history-page-sub   { font-size: 14px; color: #666; }
         .history-shield-icon { margin-top: 4px; opacity: 0.7; }
 
@@ -379,8 +380,10 @@ $activity_stmt->close();
 
         .ts-cell       { display: flex; align-items: center; gap: 6px; color: #444; font-size: 12px; white-space: nowrap; }
         .email-cell    { font-size: 12.5px; color: #333; }
-        .device-cell   { display: flex; align-items: center; gap: 5px; color: #555; font-size: 12.5px; white-space: nowrap; }
-        .location-cell { display: flex; align-items: center; gap: 5px; color: #555; font-size: 12.5px; white-space: nowrap; }
+        .device-cell   { display: flex; flex-direction: column; gap: 4px; color: #555; font-size: 12.5px; white-space: nowrap; }
+        .device-cell span { display: flex; align-items: center; gap: 5px; }
+        .location-cell { display: flex; flex-direction: column; gap: 4px; color: #555; font-size: 12.5px; white-space: nowrap; }
+        .location-cell span { display: flex; align-items: center; gap: 5px; }
         .ip-cell       { font-family: monospace; font-size: 12px; color: #444; }
         .reason-cell   { font-size: 12.5px; color: #666; }
 
@@ -441,8 +444,8 @@ $activity_stmt->close();
         body.dark-mode .auth-search-wrap input { color: #e8eaf0 !important; }
         body.dark-mode .auth-filters select, body.dark-mode .auth-filters input[type="date"] { background: #0f1117 !important; border-color: #2a2f3e !important; color: #e8eaf0 !important; }
         body.dark-mode .auth-table thead tr { background: #0f1117 !important; border-bottom-color: #2a2f3e !important; }
-        body.dark-mode .auth-table th { color: #6b7a90 !important; }
-        body.dark-mode .auth-table td { border-bottom-color: #1e2233 !important; }
+        body.dark-mode .auth-table th { color: #8892a4 !important; }
+        body.dark-mode .auth-table td { border-bottom-color: #2a2f3e !important; color: #b0b8cc !important; }
         body.dark-mode .auth-table tbody tr:hover { background: rgba(100,160,255,0.06) !important; }
         body.dark-mode .ts-cell, body.dark-mode .email-cell, body.dark-mode .device-cell,
         body.dark-mode .location-cell, body.dark-mode .ip-cell, body.dark-mode .reason-cell { color: #b0b8cc !important; }
@@ -508,7 +511,7 @@ $activity_stmt->close();
                 </a>
                 <a href="/pulsekit/dashboard/dictionary.php" class="sidebar-link" data-index="9" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-                    <span class="sidebar-link-text">Data Dictionary/Methodology</span>
+                    <span class="sidebar-link-text">Data Dictionary / Methodology</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
             </nav>
@@ -634,7 +637,7 @@ $activity_stmt->close();
                             <th>Email</th>
                             <th>Device</th>
                             <th>Location</th>
-                            <th>IP Address</th>
+
                             <th>Result</th>
                             <th>Reason</th>
                         </tr>
@@ -717,7 +720,7 @@ function applyTheme(theme) {
 
 function toggleTheme() {
     const current = localStorage.getItem(THEME_KEY) || 'light';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+    applyTheme(current === 'light' ? 'dark' : 'light');
 }
 
 (function() {
@@ -857,14 +860,19 @@ function renderTable(events) {
             <td>${renderEventBadge(e.eventType)}</td>
             <td class="email-cell">${e.email}</td>
             <td class="device-cell">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                ${e.device}
+                <span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    ${e.device}
+                </span>
             </td>
             <td class="location-cell">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 0 0-8-8z"/></svg>
-                ${e.location}
+                <span>${e.ip}</span>
+                <span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 0 0-8-8z"/></svg>
+                    ${e.location}
+                </span>
             </td>
-            <td class="ip-cell">${e.ip}</td>
+
             <td>${renderResultBadge(e.result)}</td>
             <td class="reason-cell">${e.reason}</td>
         </tr>
