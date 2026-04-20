@@ -135,7 +135,7 @@ if ($stmt2 === false) {
             <div class="text-links">
                 <a href="#">Forgot Password?</a>
                 <a href="#">Generate Captcha</a>
-                <a href="/pulsekit/auth/register.php">No account yet? Create here</a>
+                <a href="/auth/register.php">No account yet? Create here</a>
             </div>
 
         </div>
