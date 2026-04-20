@@ -32,8 +32,8 @@ $stmt->close();
 <head>
     <meta charset="UTF-8">
     <title>Pipeline: Ingestion & Preparation - PulseKit Dashboard</title>
-    <link rel="stylesheet" href="/pulsekit/assets/main.css">
-    <link rel="stylesheet" href="/pulsekit/assets/dashboard-styles.css">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/dashboard-styles.css">
     <!-- Apply theme BEFORE render to avoid flash -->
     <script>
         (function() {
@@ -1015,7 +1015,7 @@ $stmt->close();
 
             <!-- NAV LINKS -->
             <nav class="sidebar-nav">
-                <a href="/pulsekit/dashboard/pipeline.php" class="sidebar-link active" data-index="0">
+                <a href="/dashboard/pipeline.php" class="sidebar-link active" data-index="0">
                     <span class="sidebar-link-icon">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     </span>
