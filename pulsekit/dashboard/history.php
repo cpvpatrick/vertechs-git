@@ -49,7 +49,7 @@ $activity_stmt->close();
 <head>
     <meta charset="UTF-8">
     <title>Login History</title>
-    <link rel="stylesheet" href="/pulsekit/assets/main.css">
+    <link rel="stylesheet" href="/assets/main.css">
     <!-- Apply theme BEFORE render to avoid flash -->
     <script>
         (function() {
@@ -466,50 +466,50 @@ $activity_stmt->close();
                 <div class="sidebar-brand-sub">MSTL · LightGBM · MinT · C2G</div>
             </div>
             <nav class="sidebar-nav">
-                <a href="/pulsekit/dashboard/pipeline.php" class="sidebar-link" data-index="0">
+                <a href="/dashboard/pipeline.php" class="sidebar-link" data-index="0">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
                     <span class="sidebar-link-text">Pipeline (Ingestion &amp; Prep)</span>
                 </a>
-                <a href="/pulsekit/dashboard/history.php" class="sidebar-link active" data-index="1">
+                <a href="/dashboard/history.php" class="sidebar-link active" data-index="1">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
                     <span class="sidebar-link-text">Login History (Security Audit)</span>
                 </a>
-                <a href="/pulsekit/dashboard/overview.php" class="sidebar-link" data-index="2" data-locked="true">
+                <a href="/dashboard/overview.php" class="sidebar-link" data-index="2" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                     <span class="sidebar-link-text">Overview</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/seasonality.php" class="sidebar-link" data-index="3" data-locked="true">
+                <a href="/dashboard/seasonality.php" class="sidebar-link" data-index="3" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
                     <span class="sidebar-link-text">Seasonality Profiles (MSTL)</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/trend.php" class="sidebar-link" data-index="4" data-locked="true">
+                <a href="/dashboard/trend.php" class="sidebar-link" data-index="4" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
                     <span class="sidebar-link-text">Trend-True Growth (MoM/YTD)</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/forecast.php" class="sidebar-link" data-index="5" data-locked="true">
+                <a href="/dashboard/forecast.php" class="sidebar-link" data-index="5" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
                     <span class="sidebar-link-text">Forecasts (Base vs Reconciled)</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/coherence.php" class="sidebar-link" data-index="6" data-locked="true">
+                <a href="/dashboard/coherence.php" class="sidebar-link" data-index="6" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
                     <span class="sidebar-link-text">Coherence Check</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/c2g.php" class="sidebar-link" data-index="7" data-locked="true">
+                <a href="/dashboard/c2g.php" class="sidebar-link" data-index="7" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></span>
                     <span class="sidebar-link-text">C2G Growth Drivers</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/stock.php" class="sidebar-link" data-index="8" data-locked="true">
+                <a href="/dashboard/stock.php" class="sidebar-link" data-index="8" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
                     <span class="sidebar-link-text">Stock Allocation Prescriptions</span>
                     <span class="sidebar-lock-icon">🔒</span>
                 </a>
-                <a href="/pulsekit/dashboard/dictionary.php" class="sidebar-link" data-index="9" data-locked="true">
+                <a href="/dashboard/dictionary.php" class="sidebar-link" data-index="9" data-locked="true">
                     <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
                     <span class="sidebar-link-text">Data Dictionary / Methodology</span>
                     <span class="sidebar-lock-icon">🔒</span>
@@ -658,7 +658,7 @@ $activity_stmt->close();
     <div class="modal-box">
         <h2>Are you sure you want to logout?</h2>
         <div class="modal-buttons">
-            <a href="/pulsekit/auth/logout.php" class="confirm-btn">Yes, Logout</a>
+            <a href="/auth/logout.php" class="confirm-btn">Yes, Logout</a>
             <button onclick="closeLogoutModal()" class="cancel-btn">Cancel</button>
         </div>
     </div>
@@ -685,7 +685,7 @@ function applyLockState() {
 
 function confirmResetDataset() {
     if (confirm('Reset your dataset? This will re-lock all analytics modules until you load the sample data again.')) {
-        fetch('/pulsekit/dashboard/reset_dataset.php', { method: 'POST', credentials: 'same-origin' })
+        fetch('/dashboard/reset_dataset.php', { method: 'POST', credentials: 'same-origin' })
         .then(res => res.json())
         .then(data => { if (data.success) window.location.reload(); })
         .catch(() => alert('Network error. Please try again.'));
