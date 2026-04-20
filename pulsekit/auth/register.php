@@ -67,7 +67,7 @@ $check->close();
     $stmt->bind_param("ssss", $username, $email, $hashed, $token);
     $stmt->execute();
 
-    $verifyLink = "http://localhost/pulsekit/auth/verify.php?token=$token";
+    $verifyLink = "http://localhost/auth/verify.php?token=$token";
 
     $mail = new PHPMailer(true);
     configureSMTP($mail);
@@ -89,7 +89,7 @@ $check->close();
 <html>
 <head>
     <title>Registration Successful</title>
-    <link rel='stylesheet' href='/pulsekit/assets/style.css'>
+    <link rel='stylesheet' href='/assets/style.css'>
     <meta http-equiv='refresh' content='3;url=../index.php'>
     <style>
         body {
@@ -134,7 +134,7 @@ exit;
 <head>
     <meta charset="UTF-8">
     <title>Register | PulseKit</title>
-    <link rel="stylesheet" href="/pulsekit/assets/style.css">
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 
