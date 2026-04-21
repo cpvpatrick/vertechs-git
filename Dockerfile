@@ -12,4 +12,6 @@ RUN a2enmod rewrite
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html
 
+RUN docker-php-ext-install pdo pdo_pgsql pgsql
+
 EXPOSE 80
