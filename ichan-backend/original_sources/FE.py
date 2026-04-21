@@ -545,15 +545,26 @@ panel = panel.sort_values(
 # In[10]:
 
 
-key_cols = ["Product Code", "Store Code", "NESTLE STORE CLUSTER", "NESTLE REGION"]
+possible_key_cols = [
+    ["Product Code", "Store Code", "NESTLE STORE CLUSTER", "NESTLE REGION"],
+    ["product_code", "store_code", "nestle_store_cluster", "nestle_region"],
+]
+
+key_cols = next(
+    (cols for cols in possible_key_cols if all(c in panel.columns for c in cols)),
+    None
+)
+
+if key_cols is None:
+    raise ValueError(
+        f"Required key columns not found in panel. Available columns: {panel.columns.tolist()}"
+    )
 
 panel["is_observed_month"] = 1
 
-def densify_within_active_span(g):
+def densify_within_active_span(g, group_key_dict):
     g = g.sort_values("ds").copy()
     full_ds = pd.date_range(g["ds"].min(), g["ds"].max(), freq="MS")
-
-    base = g[key_cols].iloc[0].to_dict()
 
     out = (
         g.set_index("ds")
@@ -562,7 +573,7 @@ def densify_within_active_span(g):
          .reset_index()
     )
 
-    for c, v in base.items():
+    for c, v in group_key_dict.items():
         out[c] = v
 
     out["is_observed_month"] = out["is_observed_month"].fillna(0).astype("int8")
@@ -572,11 +583,15 @@ def densify_within_active_span(g):
     out["units_sold_ty"] = pd.to_numeric(out["units_sold_ty"], errors="coerce").fillna(0.0)
     return out
 
-panel = (
-    panel.groupby(key_cols, group_keys=False)
-    .apply(densify_within_active_span)
-    .reset_index(drop=True)
-)
+dense_parts = []
+
+for grp, g in panel.groupby(key_cols, observed=False, sort=False):
+    if not isinstance(grp, tuple):
+        grp = (grp,)
+    group_key_dict = dict(zip(key_cols, grp))
+    dense_parts.append(densify_within_active_span(g, group_key_dict))
+
+panel = pd.concat(dense_parts, ignore_index=True)
 
 panel = panel.sort_values(["Product Code", "Store Code", "ds"]).reset_index(drop=True)
 

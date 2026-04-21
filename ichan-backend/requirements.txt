@@ -1,0 +1,15 @@
+pandas
+numpy
+scikit-learn
+lightgbm
+statsmodels
+psycopg2-binary
+sqlalchemy
+matplotlib
+tqdm
+pyarrow
+chardet
+jupyter
+notebook
+nbconvert
+ipywidgets
