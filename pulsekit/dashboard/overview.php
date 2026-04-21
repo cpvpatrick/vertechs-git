@@ -25,137 +25,104 @@ $stmt->bind_param(
 $stmt->execute();
 $stmt->close();
 
-/* FETCH DATA FROM DATABASE WITH ERROR HANDLING */
-// Total Sales (Raw)
-$total_sales = 0;
-$result = $conn->query("SELECT SUM(net_sales_ty_exvat) as total_sales FROM fact_sales");
-if ($result) {
-    $row = $result->fetch_assoc();
-    $total_sales = $row['total_sales'] ?? 0;
-}
+/* FETCH DATA FROM POSTGRESQL ANALYTICS DATABASE */
+require_once "../db_analytics.php";
 
-// MoM Growth (Month-over-Month)
-$mom_growth = 0;
-$result = $conn->query("
-    SELECT 
-        MONTH(period) as month,
-        SUM(net_sales_ty_exvat) as sales
-    FROM fact_sales
-    WHERE YEAR(period) = 2023
-    GROUP BY MONTH(period)
-    ORDER BY month DESC
-    LIMIT 2
-");
+$total_sales      = 0;
+$mom_growth       = 0;
+$ytd_growth       = 0;
+$next_3m_forecast = 0;
+$top_drivers      = [];
+$top_detractors   = [];
+$chart_data       = [];
 
-$months = [];
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $months[] = $row['sales'];
+if ($pdo) {
+    // ── KPIs ──────────────────────────────────────────────────────────────────
+    try {
+        $kpi = $pdo->query(
+            "SELECT total_sales, mom_growth_pct, ytd_growth_pct, next_3m_forecast
+             FROM api_overview_kpis
+             LIMIT 1"
+        )->fetch();
+        if ($kpi) {
+            $total_sales      = $kpi['total_sales']      ?? 0;
+            $mom_growth       = $kpi['mom_growth_pct']   ?? 0;  // already in %
+            $ytd_growth       = $kpi['ytd_growth_pct']   ?? 0;  // already in %
+            $next_3m_forecast = $kpi['next_3m_forecast'] ?? 0;
+        }
+    } catch (PDOException $e) {
+        error_log("Overview KPIs query failed: " . $e->getMessage());
     }
-}
 
-if (count($months) >= 2 && $months[1] != 0) {
-    $mom_growth = (($months[0] - $months[1]) / $months[1]) * 100;
-} elseif (count($months) == 1) {
-    $mom_growth = 4.3; // Default value
-}
-
-// YTD Growth
-$ytd_growth = 0;
-$result = $conn->query("
-    SELECT 
-        SUM(CASE WHEN YEAR(period) = 2023 THEN net_sales_ty_exvat ELSE 0 END) as sales_2023,
-        SUM(CASE WHEN YEAR(period) = 2022 THEN net_sales_ty_exvat ELSE 0 END) as sales_2022
-    FROM fact_sales
-");
-
-if ($result) {
-    $row = $result->fetch_assoc();
-    $sales_2023 = $row['sales_2023'] ?? 0;
-    $sales_2022 = $row['sales_2022'] ?? 0;
-    
-    if ($sales_2022 != 0) {
-        $ytd_growth = (($sales_2023 - $sales_2022) / $sales_2022) * 100;
-    } else {
-        $ytd_growth = 5.4; // Default value
+    // ── Top Growth Drivers (Cluster level, latest month) ─────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT
+                COALESCE(nestle_store_cluster, nestle_region) AS name,
+                SUM(reconciled_forecast)                      AS sales,
+                SUM(growth_vs_ly_abs)                        AS growth_abs
+            FROM api_overview_growth_drivers
+            WHERE driver_direction = 'driver'
+              AND level IN ('Cluster', 'Region')
+              AND ds = (SELECT MAX(ds) FROM api_overview_growth_drivers)
+            GROUP BY nestle_store_cluster, nestle_region
+            ORDER BY growth_abs DESC
+            LIMIT 5
+        ");
+        while ($row = $stmt->fetch()) {
+            $top_drivers[] = [
+                'name'   => $row['name'],
+                'growth' => floatval($row['growth_abs']),
+                'sales'  => floatval($row['sales']),
+            ];
+        }
+    } catch (PDOException $e) {
+        error_log("Overview drivers query failed: " . $e->getMessage());
     }
-}
 
-// Next 3M Forecast
-$next_3m_forecast = 16892; // Default value
-$result = $conn->query("SELECT SUM(net_sales_ty_exvat) as forecast FROM fact_sales WHERE period >= '2025-06-01' LIMIT 3");
-if ($result) {
-    $row = $result->fetch_assoc();
-    $next_3m_forecast = $row['forecast'] ?? 16892;
-}
-
-// Top Growth Drivers (by cluster)
-$top_drivers = [];
-$result = $conn->query("
-    SELECT 
-        ds.nestle_store_cluster as cluster,
-        SUM(fs.net_sales_ty_exvat) as sales,
-        SUM(fs.units_sold_ty) as units_ty,
-        SUM(fs.units_sold_ly) as units_ly
-    FROM fact_sales fs
-    JOIN dim_store ds ON fs.store_id = ds.store_id
-    WHERE ds.nestle_store_cluster IS NOT NULL
-    GROUP BY ds.nestle_store_cluster
-    ORDER BY sales DESC
-");
-
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $units_ly = $row['units_ly'] ?? 1;
-        $growth = $units_ly != 0 ? (($row['units_ty'] - $units_ly) / $units_ly) * 100 : 0;
-        $top_drivers[] = [
-            'name' => $row['cluster'],
-            'growth' => $growth,
-            'sales' => $row['sales']
-        ];
+    // ── Top Detractors (SKU level, latest month) ──────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT
+                COALESCE(product_description, product_code) AS product,
+                SUM(reconciled_forecast)                     AS sales_ty,
+                SUM(actual_ly)                               AS sales_ly
+            FROM api_overview_growth_drivers
+            WHERE driver_direction = 'detractor'
+              AND level = 'SKU'
+              AND ds = (SELECT MAX(ds) FROM api_overview_growth_drivers)
+            GROUP BY product_description, product_code
+            ORDER BY SUM(growth_vs_ly_abs) ASC
+            LIMIT 4
+        ");
+        while ($row = $stmt->fetch()) {
+            $sales_ly = floatval($row['sales_ly'] ?? 1);
+            $sales_ty = floatval($row['sales_ty'] ?? 0);
+            $decline  = $sales_ly != 0 ? (($sales_ly - $sales_ty) / $sales_ly) * 100 : 0;
+            $top_detractors[] = [
+                'name'    => $row['product'],
+                'decline' => $decline,
+            ];
+        }
+    } catch (PDOException $e) {
+        error_log("Overview detractors query failed: " . $e->getMessage());
     }
-}
 
-// Top Detractors
-$top_detractors = [];
-$result = $conn->query("
-    SELECT 
-        dp.product_description as product,
-        SUM(fs.net_sales_ty_exvat) as sales_ty,
-        SUM(fs.net_sales_ly_exvat) as sales_ly
-    FROM fact_sales fs
-    JOIN dim_product dp ON fs.product_id = dp.product_id
-    GROUP BY dp.product_description
-    ORDER BY sales_ty ASC
-    LIMIT 4
-");
-
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $sales_ly = $row['sales_ly'] ?? 1;
-        $decline = $sales_ly != 0 ? (($sales_ly - $row['sales_ty']) / $sales_ly) * 100 : 0;
-        $top_detractors[] = [
-            'name' => $row['product'],
-            'decline' => $decline
-        ];
-    }
-}
-
-// Time series data for chart
-$chart_data = [];
-$result = $conn->query("
-    SELECT 
-        DATE_FORMAT(period, '%Y-%m') as month,
-        SUM(net_sales_ty_exvat) as raw_sales,
-        SUM(net_sales_ty_exvat) * 0.95 as trend_sales
-    FROM fact_sales
-    GROUP BY DATE_FORMAT(period, '%Y-%m')
-    ORDER BY month
-");
-
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $chart_data[] = $row;
+    // ── Time-series chart (trend-true monthly) ────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT
+                TO_CHAR(ds, 'YYYY-MM')  AS month,
+                raw_sales,
+                trend_true_sales        AS trend_sales
+            FROM api_overview_trend_chart
+            ORDER BY ds
+        ");
+        while ($row = $stmt->fetch()) {
+            $chart_data[] = $row;
+        }
+    } catch (PDOException $e) {
+        error_log("Overview trend chart query failed: " . $e->getMessage());
     }
 }
 ?>

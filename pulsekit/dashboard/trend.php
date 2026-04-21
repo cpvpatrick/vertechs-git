@@ -26,92 +26,120 @@ $stmt->execute();
 $stmt->close();
  
 /* GET FILTER PARAMETERS */
-$filter_region = $_GET['region'] ?? 'All';
+$filter_region  = $_GET['region']  ?? 'All';
 $filter_cluster = $_GET['cluster'] ?? 'All';
 $filter_category = $_GET['category'] ?? 'All';
-$filter_brand = $_GET['brand'] ?? 'All';
-$filter_sku = $_GET['sku'] ?? 'All';
- 
-/* BUILD TREND DATA WITH GROWTH METRICS */
-$query = "
-    SELECT 
-        ds.nestle_region as region,
-        ds.nestle_store_cluster as cluster,
-        dp.product_description as sku,
-        SUBSTRING(dp.product_description, 1, 10) as brand,
-        SUBSTRING(dp.product_description, 1, 5) as category,
-        SUM(fs.net_sales_ty_exvat) as sales_ty,
-        SUM(fs.net_sales_ly_exvat) as sales_ly,
-        SUM(fs.units_sold_ty) as units_ty,
-        SUM(fs.units_sold_ly) as units_ly
-    FROM fact_sales fs
-    JOIN dim_store ds ON fs.store_id = ds.store_id
-    JOIN dim_product dp ON fs.product_id = dp.product_id
-    WHERE 1=1
-";
- 
-if ($filter_region !== 'All') {
-    $query .= " AND ds.nestle_region = '" . $conn->real_escape_string($filter_region) . "'";
-}
-if ($filter_cluster !== 'All') {
-    $query .= " AND ds.nestle_store_cluster = '" . $conn->real_escape_string($filter_cluster) . "'";
-}
- 
-$query .= " GROUP BY ds.nestle_region, ds.nestle_store_cluster, dp.product_description
-            ORDER BY sales_ty DESC";
- 
-$result = $conn->query($query);
- 
+$filter_brand   = $_GET['brand']   ?? 'All';
+$filter_sku     = $_GET['sku']     ?? 'All';
+
+/* FETCH DATA FROM POSTGRESQL ANALYTICS DATABASE */
+require_once "../db_analytics.php";
+
 $trend_data = [];
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $sales_ly = $row['sales_ly'] ?? 1;
-        $units_ly = $row['units_ly'] ?? 1;
-        
-        $mom_growth = $sales_ly != 0 ? (($row['sales_ty'] - $sales_ly) / $sales_ly) * 100 : 0;
-        $ytd_growth = $units_ly != 0 ? (($row['units_ty'] - $units_ly) / $units_ly) * 100 : 0;
-        
-        $trend_data[] = [
-            'region' => $row['region'],
-            'cluster' => $row['cluster'],
-            'category' => $row['category'],
-            'brand' => $row['brand'],
-            'sku' => $row['sku'],
-            'sales_ty' => $row['sales_ty'],
-            'sales_ly' => $row['sales_ly'],
-            'units_ty' => $row['units_ty'],
-            'units_ly' => $row['units_ly'],
-            'mom_growth' => $mom_growth,
-            'ytd_growth' => $ytd_growth
-        ];
+$regions    = [];
+$clusters   = [];
+$skus       = [];
+
+if ($pdo) {
+    // ── Trend data from pipeline output ─────────────────────────────────────
+    try {
+        $sql    = "
+            SELECT
+                \"NESTLE REGION\"        AS region,
+                \"NESTLE STORE CLUSTER\" AS cluster,
+                \"Product Description\"  AS sku,
+                \"Product Description\"  AS brand,
+                \"Product Description\"  AS category,
+                SUM(raw_sales)           AS sales_ty,
+                NULL::numeric            AS sales_ly,
+                NULL::numeric            AS units_ty,
+                NULL::numeric            AS units_ly,
+                AVG(raw_mom_growth_pct)  AS mom_growth,
+                AVG(raw_yoy_growth_pct)  AS ytd_growth
+            FROM api_trend_true_growth_table
+            WHERE 1 = 1
+        ";
+        $params = [];
+        if ($filter_region !== 'All') {
+            $sql .= " AND \"NESTLE REGION\" = :region";
+            $params[':region'] = $filter_region;
+        }
+        if ($filter_cluster !== 'All') {
+            $sql .= " AND \"NESTLE STORE CLUSTER\" = :cluster";
+            $params[':cluster'] = $filter_cluster;
+        }
+        if ($filter_sku !== 'All') {
+            $sql .= " AND \"Product Description\" = :sku";
+            $params[':sku'] = $filter_sku;
+        }
+        $sql .= "
+            GROUP BY \"NESTLE REGION\", \"NESTLE STORE CLUSTER\", \"Product Description\"
+            ORDER BY sales_ty DESC
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        while ($row = $stmt->fetch()) {
+            $trend_data[] = [
+                'region'    => $row['region'],
+                'cluster'   => $row['cluster'],
+                'category'  => $row['category'],
+                'brand'     => $row['brand'],
+                'sku'       => $row['sku'],
+                'sales_ty'  => floatval($row['sales_ty']  ?? 0),
+                'sales_ly'  => floatval($row['sales_ly']  ?? 0),
+                'units_ty'  => floatval($row['units_ty']  ?? 0),
+                'units_ly'  => floatval($row['units_ly']  ?? 0),
+                'mom_growth' => floatval($row['mom_growth'] ?? 0),
+                'ytd_growth' => floatval($row['ytd_growth'] ?? 0),
+            ];
+        }
+    } catch (PDOException $e) {
+        error_log("Trend data query failed: " . $e->getMessage());
     }
-}
- 
-/* GET UNIQUE VALUES FOR FILTERS */
-$regions = [];
-$clusters = [];
-$categories = [];
-$brands = [];
-$skus = [];
- 
-$result = $conn->query("SELECT DISTINCT nestle_region FROM dim_store WHERE nestle_region IS NOT NULL ORDER BY nestle_region");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $regions[] = $row['nestle_region'];
+
+    // ── Dropdown: distinct regions ────────────────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT DISTINCT \"NESTLE REGION\" AS nestle_region
+            FROM api_trend_true_growth_table
+            WHERE \"NESTLE REGION\" IS NOT NULL
+            ORDER BY \"NESTLE REGION\"
+        ");
+        while ($row = $stmt->fetch()) {
+            $regions[] = $row['nestle_region'];
+        }
+    } catch (PDOException $e) {
+        error_log("Trend regions query failed: " . $e->getMessage());
     }
-}
- 
-$result = $conn->query("SELECT DISTINCT nestle_store_cluster FROM dim_store WHERE nestle_store_cluster IS NOT NULL ORDER BY nestle_store_cluster");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $clusters[] = $row['nestle_store_cluster'];
+
+    // ── Dropdown: distinct clusters ───────────────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT DISTINCT \"NESTLE STORE CLUSTER\" AS nestle_store_cluster
+            FROM api_trend_true_growth_table
+            WHERE \"NESTLE STORE CLUSTER\" IS NOT NULL
+            ORDER BY \"NESTLE STORE CLUSTER\"
+        ");
+        while ($row = $stmt->fetch()) {
+            $clusters[] = $row['nestle_store_cluster'];
+        }
+    } catch (PDOException $e) {
+        error_log("Trend clusters query failed: " . $e->getMessage());
     }
-}
- 
-$result = $conn->query("SELECT DISTINCT product_description FROM dim_product ORDER BY product_description");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $skus[] = $row['product_description'];
+
+    // ── Dropdown: distinct SKUs ───────────────────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT DISTINCT \"Product Description\" AS product_description
+            FROM api_trend_true_growth_table
+            WHERE \"Product Description\" IS NOT NULL
+            ORDER BY \"Product Description\"
+        ");
+        while ($row = $stmt->fetch()) {
+            $skus[] = $row['product_description'];
+        }
+    } catch (PDOException $e) {
+        error_log("Trend SKUs query failed: " . $e->getMessage());
     }
 }
 ?>

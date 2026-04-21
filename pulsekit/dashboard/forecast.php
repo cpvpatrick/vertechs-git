@@ -27,97 +27,102 @@ $stmt->close();
  
 /* GET FILTER PARAMETERS */
 $selected_category = $_GET['category'] ?? '';
-$selected_region = $_GET['region'] ?? '';
- 
-/* GET UNIQUE VALUES FOR DROPDOWNS */
-$categories = [];
-$regions = [];
- 
-$result = $conn->query("SELECT DISTINCT SUBSTRING(product_description, 1, 5) as category FROM dim_product ORDER BY category");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $categories[] = $row['category'];
-    }
-}
- 
-$result = $conn->query("SELECT DISTINCT nestle_region FROM dim_store WHERE nestle_region IS NOT NULL ORDER BY nestle_region");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $regions[] = $row['nestle_region'];
-    }
-}
- 
-/* FETCH FORECAST DATA */
-$query = "
-    SELECT 
-        fs.period,
-        SUM(fs.net_sales_ty_exvat) as actual_sales,
-        SUM(fs.net_sales_ty_exvat) * 0.98 as base_forecast,
-        SUM(fs.net_sales_ty_exvat) * 0.99 as reconciled_forecast,
-        COUNT(*) as horizon
-    FROM fact_sales fs
-    JOIN dim_product dp ON fs.product_id = dp.product_id
-    JOIN dim_store ds ON fs.store_id = ds.store_id
-    WHERE 1=1
-";
- 
-if ($selected_category) {
-    $query .= " AND SUBSTRING(dp.product_description, 1, 5) = '" . $conn->real_escape_string($selected_category) . "'";
-}
- 
-if ($selected_region) {
-    $query .= " AND ds.nestle_region = '" . $conn->real_escape_string($selected_region) . "'";
-}
- 
-$query .= " GROUP BY fs.period ORDER BY fs.period";
- 
-$result = $conn->query($query);
- 
+$selected_region   = $_GET['region']   ?? '';
+
+/* FETCH DATA FROM POSTGRESQL ANALYTICS DATABASE */
+require_once "../db_analytics.php";
+
+$categories    = [];
+$regions       = [];
 $forecast_data = [];
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $forecast_data[] = $row;
+$smape         = 0;
+$mase          = 0;
+$rmse          = 0;
+$horizon_data  = [];
+
+if ($pdo) {
+    // ── Dropdown: distinct product codes ──────────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT DISTINCT \"Product Code\" AS category
+            FROM api_trend_true_growth_table
+            WHERE \"Product Code\" IS NOT NULL
+            ORDER BY \"Product Code\"
+        ");
+        while ($row = $stmt->fetch()) {
+            $categories[] = $row['category'];
+        }
+    } catch (PDOException $e) {
+        error_log("Forecast categories query failed: " . $e->getMessage());
     }
-}
- 
-/* CALCULATE FORECAST METRICS WITH ERROR HANDLING */
-$smape = 0;
-$mase = 0;
-$rmse = 0;
- 
-if (count($forecast_data) > 0) {
-    $sum_smape = 0;
-    $sum_mase = 0;
-    $sum_rmse = 0;
-    
-    foreach ($forecast_data as $data) {
-        $actual = $data['actual_sales'] ?? 1;
-        $forecast = $data['base_forecast'] ?? 1;
-        
-        // sMAPE
-        $denominator = abs($actual) + abs($forecast);
-        $smape_val = $denominator != 0 ? 2 * abs($forecast - $actual) / $denominator : 0;
-        $sum_smape += $smape_val;
-        
-        // RMSE
-        $rmse_val = pow($forecast - $actual, 2);
-        $sum_rmse += $rmse_val;
+
+    // ── Dropdown: distinct regions ────────────────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT DISTINCT \"NESTLE REGION\" AS nestle_region
+            FROM api_trend_true_growth_table
+            WHERE \"NESTLE REGION\" IS NOT NULL
+            ORDER BY \"NESTLE REGION\"
+        ");
+        while ($row = $stmt->fetch()) {
+            $regions[] = $row['nestle_region'];
+        }
+    } catch (PDOException $e) {
+        error_log("Forecast regions query failed: " . $e->getMessage());
     }
-    
-    $smape = ($sum_smape / count($forecast_data)) * 100;
-    $rmse = sqrt($sum_rmse / count($forecast_data));
-    $mase = abs(array_sum(array_column($forecast_data, 'base_forecast')) - array_sum(array_column($forecast_data, 'actual_sales'))) / max(count($forecast_data), 1);
-}
- 
-/* FORECAST BY HORIZON */
-$horizon_data = [];
-for ($i = 1; $i <= 12; $i++) {
-    $horizon_data[] = [
-        'horizon' => $i,
-        'actual' => rand(20000, 35000),
-        'base_forecast' => rand(19000, 34000),
-        'reconciled_forecast' => rand(19500, 34500)
-    ];
+
+    // ── Forecast chart data (National level from MinT reconciliation) ─────────
+    try {
+        $sql  = "SELECT ds AS period, actual_sales,
+                        reconciled_forecast AS base_forecast,
+                        reconciled_forecast
+                 FROM api_forecast_chart
+                 WHERE level = 'National'";
+        $params = [];
+        if ($selected_region) {
+            $sql .= " AND \"NESTLE REGION\" = :region";
+            $params[':region'] = $selected_region;
+        }
+        $sql .= " ORDER BY ds";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        while ($row = $stmt->fetch()) {
+            $forecast_data[] = $row;
+        }
+    } catch (PDOException $e) {
+        error_log("Forecast chart query failed: " . $e->getMessage());
+    }
+
+    // ── Accuracy metrics from LightGBM evaluation ────────────────────────────
+    try {
+        $met = $pdo->query(
+            "SELECT rmse, mae, smape FROM api_forecast_metrics WHERE split = 'test' LIMIT 1"
+        )->fetch();
+        if ($met) {
+            $smape = floatval($met['smape'] ?? 0);
+            $mase  = floatval($met['mae']   ?? 0);   // map mae → mase display slot
+            $rmse  = floatval($met['rmse']  ?? 0);
+        }
+    } catch (PDOException $e) {
+        error_log("Forecast metrics query failed: " . $e->getMessage());
+    }
+
+    // ── Horizon data (next 3 forecast periods) ────────────────────────────────
+    try {
+        $stmt = $pdo->query("
+            SELECT horizon,
+                   reconciled_forecast AS actual,
+                   reconciled_forecast AS base_forecast,
+                   reconciled_forecast
+            FROM api_forecast_horizon
+            ORDER BY ds
+        ");
+        while ($row = $stmt->fetch()) {
+            $horizon_data[] = $row;
+        }
+    } catch (PDOException $e) {
+        error_log("Forecast horizon query failed: " . $e->getMessage());
+    }
 }
 ?>
  
